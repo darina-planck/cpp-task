@@ -14,7 +14,7 @@ int main() {
 
     cout << "Введите строку " << "\n";
     getline(cin, massage);
-    // istringstream позволяет "читать" строку massage как поток ввода
+    // istringstream позволяет "читать" строку massage как поток ввода 
 
     istringstream stream(massage); // строка massage содержится внутри потока stream и мы можем из нее извлекать слова
     string word; // для вычленения отдельных слов из строки
