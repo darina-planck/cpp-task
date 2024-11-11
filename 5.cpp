@@ -6,7 +6,6 @@ using namespace std;
 
 int main() {
     // русский ввод не работает
-    setlocale(LC_ALL, "RU");
     string massage;
     int min_size = 0, max_size = 0;
     vector<string> words={};
