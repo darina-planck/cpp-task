@@ -42,7 +42,7 @@ int main() {
                 flag = true;
             }
         }
-    }
+    } 
     cout << "\n";
     for (int i = 0; i < n; i++) { // вывод массива х2
         for (int j = 0; j < n; j++) {
