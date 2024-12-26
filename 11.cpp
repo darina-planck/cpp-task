@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <sstream>
 #include <limits>
+#include <regex> // Для работы с регулярными выражениями
 
 using namespace std;
 
@@ -32,39 +33,43 @@ vector<Book> load_books(const string& file_path) {
 
     if (file.is_open()) {
         string line;
+        int line_number = 0;
+        regex pattern(R"((.+?)\s{2,}(.+?)\s{2,}(.+?)\s{2,}(\d{4})\s{2,}(\d+(\.\d+)?))");
+        // Регулярное выражение для парсинга строки с двумя или более пробелами как разделителями
+
         while (getline(file, line)) {
-            istringstream stream(line);
-            Book book;
+            line_number++;
+            smatch match;
 
-            // Считываем данные
-            getline(stream, book.title, '\t');      // Считываем название книги (до табуляции)
-            getline(stream, book.author, '\t');    // Считываем автора (до табуляции)
-            getline(stream, book.publisher, '\t'); // Считываем издательство (до табуляции)
-            stream >> book.year;                   // Считываем год издания
-            stream >> book.price;                  // Считываем цену книги
+            if (regex_match(line, match, pattern)) {
+                Book book;
+                book.title = match[1];
+                book.author = match[2];
+                book.publisher = match[3];
+                book.year = stoi(match[4]);
+                book.price = stof(match[5]);
 
-            // Убираем оставшиеся пробелы в потоке
-            stream.ignore(numeric_limits<streamsize>::max(), '\n');
-
-            books.push_back(book);
+                books.push_back(book);
+            } else {
+                cout << "Ошибка: Неверный формат данных в строке " << line_number << ": " << line << endl;
+            }
         }
+
         file.close();
     } else {
-        cout << "Не удалось открыть файл!" << endl;
+        cout << "Ошибка: Не удалось открыть файл " << file_path << endl;
     }
 
     return books;
 }
-
 // Функция для сохранения данных в файл
-// Эта функция открывает файл для записи и сохраняет данные о книгах из вектора books в файл. Каждая книга записывается в одну строку, разделенную табуляциями.
 void save_books(const string& file_path, const vector<Book>& books) {
     ofstream file(file_path);
 
     if (file.is_open()) {
         for (const auto& book : books) {
-            file << book.title << "\t" << "      " << book.author << "\t" << "      "<< book.publisher << "\t"
-                 << "      " <<  book.year << "      " << "\t" << static_cast<int>(book.price) << endl; // че то он через с "\t" так что навсякий случай
+            file << book.title << "\t" << book.author << "\t" << book.publisher << "\t"
+                 << book.year << "\t" << book.price << endl;
         }
         file.close();
     } else {
@@ -72,22 +77,30 @@ void save_books(const string& file_path, const vector<Book>& books) {
     }
 }
 
-// Функция для отображения всех книг в нужном формате
-// Эта функция выводит на экран информацию о всех книгах в форматированном виде. Используется библиотека iomanip для форматирования вывода.
 void display_books(const vector<Book>& books) {
-    cout << left << setw(20) << "Название" << setw(15) << "Автор"
-         << setw(15) << "Издательство" << setw(5) << "Год" << setw(10) << "Цена" << endl;
-    cout << string(70, '-') << endl;
+    // Заголовки таблицы
+    cout << left
+         << setw(10) << "№\t"
+         << setw(30) << "Название"
+         << setw(30) << "Автор"
+         << setw(20) << "Издательство\t"
+         << setw(10) << "Год\t"
+         << setw(10) << "Цена" << endl;
 
-    for (const auto& book : books) {
-        cout << setw(20) << book.title << setw(15) << book.author << setw(15) << book.publisher
-             << setw(5) << book.year;
+    cout << string(95, '-') << endl;  // Разделитель
 
-        if (book.price > 0) {
-            cout << setw(10) << static_cast<int>(book.price) << endl;
-        } else {
-            cout << setw(10) << " " << endl;  // Пустое место для нулевой цены
-        }
+    // Вывод данных о каждой книге с индексом
+    for (size_t i = 0; i < books.size(); ++i) {
+        cout << setw(10) << i  // Печатаем индекс
+             << setw(30) << books[i].title
+             << "\t"
+             << setw(30) << books[i].author
+             << "\t"
+             << setw(20) << books[i].publisher
+             << "\t"
+             << setw(10) << books[i].year
+             << fixed << setprecision(2) << setw(10) << books[i].price
+             << endl;
     }
 }
 
@@ -120,21 +133,33 @@ void add_book(vector<Book>& books) {
 }
 
 // Функция для удаления книги по индексу
-// Эта функция отображает все книги и позволяет пользователю ввести индекс книги для удаления. Если индекс корректен, книга удаляется из вектора books. (номер строки - 1)
 void delete_book(vector<Book>& books) {
+    if (books.empty()) {
+        cout << "Список книг пуст. Удаление невозможно.\n";
+        return;
+    }
+
     display_books(books);
+
     int index;
     cout << "Введите индекс книги для удаления: ";
     cin >> index;
-    cin.ignore();  // Для очистки буфера после ввода числа
 
-    if (index >= 0 && index < books.size()) {
+    if (cin.fail()) {
+        cin.clear();
+        cin.ignore(numeric_limits<streamsize>::max(), '\n');
+        cout << "Некорректный ввод! Попробуйте снова.\n";
+        return;
+    }
+
+    if (index >= 0 && index < static_cast<int>(books.size())) {
         books.erase(books.begin() + index);
-        cout << "Книга удалена." << endl;
+        cout << "Книга с индексом " << index << " удалена.\n";
     } else {
-        cout << "Некорректный индекс!" << endl;
+        cout << "Некорректный индекс! Попробуйте снова.\n";
     }
 }
+
 
 // Функция для добавления книг из другого файла
 void merge_books(const string& file_path, vector<Book>& books) {
