@@ -153,7 +153,7 @@ int main() {
                 int pounds, shillings, pence;
                 cout << "Введите исходную сумму (фунты шиллинги пенсы): ";
                 cin >> input.pounds >> input.shillings >> input.pence;
-                cout << "Введите增加值 (фунты шиллинги пенсы): ";
+                cout << "Введите сумму, которую хотите прибавить (фунты шиллинги пенсы): ";
                 cin >> pounds >> shillings >> pence;
                 Money result = add(input, pounds, shillings, pence);
                 cout << "Результат: ";
