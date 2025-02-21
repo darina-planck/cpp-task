@@ -1,8 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include <limits>
-#include <stdexcept> // Для std::invalid_argument
+#include <limits> // Для cin.ignore()
 using namespace std;
 
 // Константы для денежной системы
@@ -19,11 +18,11 @@ struct Money {
 
 // Функция для нормализации значения
 void normalize(Money &money) {
-    if (money.pence >= pence_in_shilling) {// Если количество пенсов больше или равно 12, они преобразуются в шиллинги
+    if (money.pence >= pence_in_shilling) {
         money.shillings += money.pence / pence_in_shilling;
         money.pence %= pence_in_shilling;
     }
-    if (money.shillings >= shilling_in_pound) { // Если количество шиллингов больше или равно 20, они преобразуются в фунты
+    if (money.shillings >= shilling_in_pound) {
         money.pounds += money.shillings / shilling_in_pound;
         money.shillings %= shilling_in_pound;
     }
@@ -64,6 +63,12 @@ Money subtract(Money a, Money b) {
     if (result.shillings < 0) {
         result.pounds -= (abs(result.shillings) + shilling_in_pound - 1) / shilling_in_pound;
         result.shillings = (result.shillings + shilling_in_pound) % shilling_in_pound;
+    }
+
+    // Проверка на отрицательную сумму
+    if (result.pounds < 0 || (result.pounds == 0 && result.shillings < 0) || (result.pounds == 0 && result.shillings == 0 && result.pence < 0)) {
+        cout << "Ошибка: Разность не может быть отрицательной." << endl;
+        return {0, 0, 0}; // Возвращаем нулевую сумму
     }
 
     return result;
@@ -116,6 +121,26 @@ void findClosestAndFarthestPairs(const vector<Money> &moneyList, int closestPair
     }
 }
 
+// Функция для безопасного чтения суммы Money с проверкой формата ввода
+bool readMoney(Money &money) {
+    while (true) {
+        if (!(cin >> money.pounds >> money.shillings >> money.pence)) { // Проверяем, является ли ввод числом
+            cout << "Ошибка: Введите три целых числа через пробел (фунты шиллинги пенсы)." << endl;
+            cin.clear(); // Очищаем флаг ошибки
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Удаляем неверные данные из буфера
+            continue; // Повторяем попытку ввода
+        }
+        // Если ввод успешен, проверяем, что после трех чисел нет лишних символов
+        if (cin.peek() != '\n') { // cin.peek() проверяет следующий символ в потоке
+            cout << "Ошибка: Введите ровно три числа через пробел (фунты шиллинги пенсы)." << endl;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n'); // Удаляем лишние символы
+            continue; // Повторяем попытку ввода
+        }
+        break; // Если всё хорошо, выходим из цикла
+    }
+    return true;
+}
+
 // Главная функция программы
 int main() {
     while (true) {
@@ -141,7 +166,9 @@ int main() {
             case 'a': {
                 Money input;
                 cout << "Введите сумму (фунты шиллинги пенсы): ";
-                cin >> input.pounds >> input.shillings >> input.pence;
+                if (!readMoney(input)) {
+                    break;
+                }
                 normalize(input);
                 cout << "Нормализованная сумма: ";
                 printMoney(input);
@@ -152,9 +179,16 @@ int main() {
                 Money input;
                 int pounds, shillings, pence;
                 cout << "Введите исходную сумму (фунты шиллинги пенсы): ";
-                cin >> input.pounds >> input.shillings >> input.pence;
-                cout << "Введите сумму, которую хотите прибавить (фунты шиллинги пенсы): ";
-                cin >> pounds >> shillings >> pence;
+                if (!readMoney(input)) {
+                    break;
+                }
+                cout << "Введите增加值 (фунты шиллинги пенсы): ";
+                if (!(cin >> pounds >> shillings >> pence)) {
+                    cout << "Ошибка: Введите три целых числа через пробел (фунты шиллинги пенсы)." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    break;
+                }
                 Money result = add(input, pounds, shillings, pence);
                 cout << "Результат: ";
                 printMoney(result);
@@ -164,9 +198,13 @@ int main() {
             case 'c': {
                 Money sum1, sum2;
                 cout << "Введите первую сумму (фунты шиллинги пенсы): ";
-                cin >> sum1.pounds >> sum1.shillings >> sum1.pence;
+                if (!readMoney(sum1)) {
+                    break;
+                }
                 cout << "Введите вторую сумму (фунты шиллинги пенсы): ";
-                cin >> sum2.pounds >> sum2.shillings >> sum2.pence;
+                if (!readMoney(sum2)) {
+                    break;
+                }
                 Money result = add(sum1, sum2);
                 cout << "Сумма: ";
                 printMoney(result);
@@ -176,19 +214,32 @@ int main() {
             case 'd': {
                 Money sum1, sum2;
                 cout << "Введите первую сумму (фунты шиллинги пенсы): ";
-                cin >> sum1.pounds >> sum1.shillings >> sum1.pence;
+                if (!readMoney(sum1)) {
+                    break;
+                }
                 cout << "Введите вторую сумму (фунты шиллинги пенсы): ";
-                cin >> sum2.pounds >> sum2.shillings >> sum2.pence;
+                if (!readMoney(sum2)) {
+                    break;
+                }
+
                 Money result = subtract(sum1, sum2);
-                cout << "Разность: ";
-                printMoney(result);
-                cout << endl;
+
+                // Если разность стала отрицательной, выводим сообщение об ошибке
+                if (result.pounds < 0 || (result.pounds == 0 && result.shillings < 0) || (result.pounds == 0 && result.shillings == 0 && result.pence < 0)) {
+                    cout << "Ошибка: Разность не может быть отрицательной." << endl;
+                } else {
+                    cout << "Разность: ";
+                    printMoney(result);
+                    cout << endl;
+                }
                 break;
             }
             case 'e': {
                 Money input;
                 cout << "Введите сумму (фунты шиллинги пенсы): ";
-                cin >> input.pounds >> input.shillings >> input.pence;
+                if (!readMoney(input)) {
+                    break;
+                }
                 int penceValue = toPence(input);
                 cout << "Сумма в пенсах: " << penceValue << endl;
                 break;
@@ -196,12 +247,20 @@ int main() {
             case '1': {
                 int N;
                 cout << "Введите количество сумм: ";
-                cin >> N;
+                if (!(cin >> N) || N <= 0) { // Проверяем, что введено число больше 0
+                    cout << "Ошибка: Введите положительное целое число." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    break;
+                }
                 vector<Money> moneyList(N);
                 cout << "Введите суммы (фунты шиллинги пенсы):\n";
                 for (int i = 0; i < N; ++i) {
-                    cin >> moneyList[i].pounds >> moneyList[i].shillings >> moneyList[i].pence;
-                    normalize(moneyList[i]);
+                    cout << "Сумма " << (i + 1) << ": ";
+                    if (!readMoney(moneyList[i])) {
+                        --i; // Повторяем попытку ввода
+                        continue;
+                    }
                 }
                 Money average = calculateAverage(moneyList);
                 cout << "Среднее значение: ";
@@ -212,12 +271,20 @@ int main() {
             case '2': {
                 int N;
                 cout << "Введите количество сумм: ";
-                cin >> N;
+                if (!(cin >> N) || N <= 0) { // Проверяем, что введено число больше 0
+                    cout << "Ошибка: Введите положительное целое число." << endl;
+                    cin.clear();
+                    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+                    break;
+                }
                 vector<Money> moneyList(N);
                 cout << "Введите суммы (фунты шиллинги пенсы):\n";
                 for (int i = 0; i < N; ++i) {
-                    cin >> moneyList[i].pounds >> moneyList[i].shillings >> moneyList[i].pence;
-                    normalize(moneyList[i]);
+                    cout << "Сумма " << (i + 1) << ": ";
+                    if (!readMoney(moneyList[i])) {
+                        --i; // Повторяем попытку ввода
+                        continue;
+                    }
                 }
 
                 int closestPair[2] = {0, 1};
