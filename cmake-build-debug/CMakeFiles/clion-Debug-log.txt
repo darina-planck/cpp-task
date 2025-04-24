@@ -1,0 +1,4 @@
+/Users/darinaplanck/Applications/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Users/darinaplanck/Applications/CLion.app/Contents/bin/ninja/mac/aarch64/ninja -G Ninja -S /Users/darinaplanck/CLionProjects/cpp-task -B /Users/darinaplanck/CLionProjects/cpp-task/cmake-build-debug
+-- Configuring done (0.0s)
+-- Generating done (0.0s)
+-- Build files have been written to: /Users/darinaplanck/CLionProjects/cpp-task/cmake-build-debug
